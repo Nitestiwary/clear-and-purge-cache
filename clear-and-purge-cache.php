@@ -7,7 +7,7 @@
  * Author:            Monetiscope
  * Author URI:        https://monetiscope.com
  * Text Domain:       clear-and-purge-cache-master
- * Domain Path:       languages
+ * Domain Path:       /languages
  * Requires at least: 5.0
  * Tested up to:      7.0
  * License:           GPLv2 or later
@@ -267,9 +267,8 @@ class Clear_And_Purge_Cache {
 					<div class="cpc-title-sub">
 						<h1><?php esc_html_e( 'Clear and Purge Cache', 'clear-and-purge-cache-master' ); ?></h1>
 						<p><?php
-							/* translators: %1$s: version number, %2$s: developer link */
-							$cpc_version_text = esc_html__( 'Version %1$s | Developed by %2$s', 'clear-and-purge-cache-master' );
-							printf( $cpc_version_text, '1.0.0', '<a href="https://monetiscope.com" target="_blank" rel="noopener noreferrer">Monetiscope</a>' );
+							// translators: %1$s: version number, %2$s: developer link.
+							printf( esc_html__( 'Version %1$s | Developed by %2$s', 'clear-and-purge-cache-master' ), '1.0.0', '<a href="https://monetiscope.com" target="_blank" rel="noopener noreferrer">Monetiscope</a>' );
 						?></p>
 					</div>
 				</div>
