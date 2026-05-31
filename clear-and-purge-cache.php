@@ -264,8 +264,10 @@ class Clear_And_Purge_Cache {
 					<img src="<?php echo esc_url( plugin_dir_url( __FILE__ ) . 'assets/icon-128x128.png' ); ?>" alt="Clear and Purge Cache" class="cpc-logo-img">
 					<div class="cpc-title-sub">
 						<h1><?php esc_html_e( 'Clear and Purge Cache', 'clear-and-purge-cache-master' ); ?></h1>
-						<!-- translators: %1$s: version number, %2$s: developer link -->
-						<p><?php printf( esc_html__( 'Version %1$s | Developed by %2$s', 'clear-and-purge-cache-master' ), '1.0.0', '<a href="https://monetiscope.com" target="_blank" rel="noopener noreferrer">Monetiscope</a>' ); ?></p>
+						<p><?php
+							// translators: %1$s: version number, %2$s: developer link
+							printf( esc_html__( 'Version %1$s | Developed by %2$s', 'clear-and-purge-cache-master' ), '1.0.0', '<a href="https://monetiscope.com" target="_blank" rel="noopener noreferrer">Monetiscope</a>' );
+						?></p>
 					</div>
 				</div>
 				<div class="cpc-header-actions">
@@ -809,11 +811,10 @@ class Clear_And_Purge_Cache {
 					</div>
 
 					<!-- Lead Generation Banner Integration -->
-					<div class="cpc-sidebar-card cpc-promo-card">
-						<a href="https://monetiscope.com/contact" target="_blank" rel="noopener noreferrer" class="cpc-promo-link">
-							<img src="<?php echo esc_url( plugin_dir_url( __FILE__ ) . 'admin/images/monetiscope-promo-sidebar.jpg' ); ?>" alt="Monetiscope Lead Generation Banner" class="cpc-promo-banner-img">
+					<div class="cpc-promo-direct-wrapper" style="margin-top: 24px;">
+						<a href="https://monetiscope.com/contact" target="_blank" rel="noopener noreferrer" style="display: block; text-decoration: none; outline: none; border: 2px solid #4f258c; border-radius: 10px; overflow: hidden; line-height: 0;">
+							<img src="<?php echo esc_url( plugin_dir_url( __FILE__ ) . 'admin/images/monetiscope-promo-sidebar.jpg' ); ?>" alt="Monetiscope Lead Generation Banner" style="width: 100%; height: auto; display: block;">
 						</a>
-						<div class="cpc-promo-badge"><?php esc_html_e( 'Premium Ad Partner', 'clear-and-purge-cache-master' ); ?></div>
 					</div>
 				</aside>
 			</div>

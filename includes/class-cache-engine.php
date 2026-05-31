@@ -599,13 +599,12 @@ class CPC_Cache_Engine {
 			$stats['orphaned_termmeta'] = $orph_tm !== false ? $orph_tm : 0;
 		}
 
-		// 8. Expired Transients (Using $wpdb->prepare for secure database execution)
-		$trans_query = $wpdb->prepare(
+		// 8. Expired Transients (Using $wpdb->prepare inline for secure database execution)
+		$transients = $wpdb->get_results( $wpdb->prepare(
 			"SELECT option_name FROM $wpdb->options WHERE option_name LIKE %s AND option_value < %d",
 			'_transient_timeout_%',
 			time()
-		);
-		$transients = $wpdb->get_results( $trans_query );
+		) );
 		$stats['transient_options'] = count( $transients );
 		foreach ( $transients as $t ) {
 			$trans_key = str_replace( '_transient_timeout_', '', $t->option_name );
