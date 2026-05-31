@@ -29,3 +29,10 @@ This plugin incorporates advanced page-caching configurations, complete script/s
 == Changelog ==
 = 1.0.0 =
 * Initial public release with full caching, minification, database, and image optimization engines.
+
+== Screenshots ==
+1. Caching Engine controls and options dashboard under the Settings tab.
+2. Manual purging action items, Global cache timeouts, and Varnish proxy settings under the Clear Cache tab.
+3. Simulate and monitor deep image optimization metrics and reclaimed disk space.
+4. Set global caching exclusions for pages, user-agents, cookies, and stylesheets.
+5. Launch automated database optimization routines to scrub revisions and trash.
