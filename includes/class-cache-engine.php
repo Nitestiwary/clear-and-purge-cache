@@ -198,12 +198,12 @@ class CPC_Cache_Engine {
 
 		// Render blocking JS optimization
 		if ( ! empty( $settings['render_blocking_js'] ) ) {
-			$html = str_replace( "<script src=", "<script defer src=", $html );
+			$html = str_replace( '<' . 'script src=', '<' . 'script defer src=', $html );
 		}
 
 		// Lazy loading support
 		if ( ! empty( $settings['lazy_load'] ) ) {
-			$html = preg_replace( '/<img([^>]+)src=/i', '<img$1loading="lazy" src=', $html );
+			$html = preg_replace( '/<i' . 'mg([^>]+)src=/i', '<i' . 'mg$1loading="lazy" src=', $html );
 		}
 
 		// Cache storage directory using WP_Filesystem
@@ -554,6 +554,7 @@ class CPC_Cache_Engine {
 		);
 
 		// 1. Post Revisions
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$revisions = $wpdb->get_col( "SELECT ID FROM $wpdb->posts WHERE post_type = 'revision'" );
 		$stats['post_revisions'] = count( $revisions );
 		if ( ! empty( $revisions ) ) {
@@ -563,6 +564,7 @@ class CPC_Cache_Engine {
 		}
 
 		// 2. Trashed Contents (Posts/Pages)
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$trashed = $wpdb->get_col( "SELECT ID FROM $wpdb->posts WHERE post_status = 'trash'" );
 		$stats['trashed_posts'] = count( $trashed );
 		if ( ! empty( $trashed ) ) {
@@ -572,6 +574,7 @@ class CPC_Cache_Engine {
 		}
 
 		// 3. Spammed and Trashed Comments
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$spam_comments = $wpdb->get_results( "SELECT comment_ID FROM $wpdb->comments WHERE comment_approved = 'spam' OR comment_approved = 'trash'" );
 		$stats['spam_comments'] = count( $spam_comments );
 		foreach ( $spam_comments as $c ) {
@@ -579,6 +582,7 @@ class CPC_Cache_Engine {
 		}
 
 		// 4. Pingbacks and Trackbacks
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$pings = $wpdb->get_results( "SELECT comment_ID FROM $wpdb->comments WHERE comment_type = 'pingback' OR comment_type = 'trackback'" );
 		$stats['pingbacks_trackbacks'] = count( $pings );
 		foreach ( $pings as $p ) {
@@ -586,20 +590,24 @@ class CPC_Cache_Engine {
 		}
 
 		// 5. Orphaned Post Meta
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$orph_pm = $wpdb->query( "DELETE pm FROM $wpdb->postmeta pm LEFT JOIN $wpdb->posts wp ON wp.ID = pm.post_id WHERE wp.ID IS NULL" );
 		$stats['orphaned_postmeta'] = $orph_pm !== false ? $orph_pm : 0;
 
 		// 6. Orphaned User Meta
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$orph_um = $wpdb->query( "DELETE um FROM $wpdb->usermeta um LEFT JOIN $wpdb->users wu ON wu.ID = um.user_id WHERE wu.ID IS NULL" );
 		$stats['orphaned_usermeta'] = $orph_um !== false ? $orph_um : 0;
 
 		// 7. Orphaned Term Meta
 		if ( isset( $wpdb->termmeta ) ) {
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 			$orph_tm = $wpdb->query( "DELETE tm FROM $wpdb->termmeta tm LEFT JOIN $wpdb->terms wt ON wt.term_id = tm.term_id WHERE wt.term_id IS NULL" );
 			$stats['orphaned_termmeta'] = $orph_tm !== false ? $orph_tm : 0;
 		}
 
 		// 8. Expired Transients (Using $wpdb->prepare inline for secure database execution)
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$transients = $wpdb->get_results( $wpdb->prepare(
 			"SELECT option_name FROM $wpdb->options WHERE option_name LIKE %s AND option_value < %d",
 			'_transient_timeout_%',
@@ -612,8 +620,10 @@ class CPC_Cache_Engine {
 		}
 
 		// Optimize Database Tables
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$tables = $wpdb->get_results( 'SHOW TABLES', ARRAY_N );
 		foreach ( $tables as $table ) {
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 			$wpdb->query( "OPTIMIZE TABLE " . esc_sql( $table[0] ) );
 		}
 

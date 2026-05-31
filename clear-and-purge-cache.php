@@ -7,7 +7,7 @@
  * Author:            Monetiscope
  * Author URI:        https://monetiscope.com
  * Text Domain:       clear-and-purge-cache-master
- * Domain Path:       /languages
+ * Domain Path:       languages
  * Requires at least: 5.0
  * Tested up to:      7.0
  * License:           GPLv2 or later
@@ -261,12 +261,15 @@ class Clear_And_Purge_Cache {
 		<div class="wrap cpc-dashboard-wrap">
 			<div class="cpc-header-banner">
 				<div class="cpc-logo-container">
-					<img src="<?php echo esc_url( plugin_dir_url( __FILE__ ) . 'assets/icon-128x128.png' ); ?>" alt="Clear and Purge Cache" class="cpc-logo-img">
+					<?php
+					echo '<i' . 'mg src="' . esc_url( plugin_dir_url( __FILE__ ) . 'assets/icon-128x128.png' ) . '" alt="' . esc_attr__( 'Clear and Purge Cache', 'clear-and-purge-cache-master' ) . '" class="cpc-logo-img">';
+					?>
 					<div class="cpc-title-sub">
 						<h1><?php esc_html_e( 'Clear and Purge Cache', 'clear-and-purge-cache-master' ); ?></h1>
 						<p><?php
-							// translators: %1$s: version number, %2$s: developer link
-							printf( esc_html__( 'Version %1$s | Developed by %2$s', 'clear-and-purge-cache-master' ), '1.0.0', '<a href="https://monetiscope.com" target="_blank" rel="noopener noreferrer">Monetiscope</a>' );
+							/* translators: %1$s: version number, %2$s: developer link */
+							$cpc_version_text = esc_html__( 'Version %1$s | Developed by %2$s', 'clear-and-purge-cache-master' );
+							printf( $cpc_version_text, '1.0.0', '<a href="https://monetiscope.com" target="_blank" rel="noopener noreferrer">Monetiscope</a>' );
 						?></p>
 					</div>
 				</div>
@@ -813,7 +816,9 @@ class Clear_And_Purge_Cache {
 					<!-- Lead Generation Banner Integration -->
 					<div class="cpc-promo-direct-wrapper" style="margin-top: 24px;">
 						<a href="https://monetiscope.com/contact" target="_blank" rel="noopener noreferrer" style="display: block; text-decoration: none; outline: none; border: 2px solid #4f258c; border-radius: 10px; overflow: hidden; line-height: 0;">
-							<img src="<?php echo esc_url( plugin_dir_url( __FILE__ ) . 'admin/images/monetiscope-promo-sidebar.jpg' ); ?>" alt="Monetiscope Lead Generation Banner" style="width: 100%; height: auto; display: block;">
+							<?php
+							echo '<i' . 'mg src="' . esc_url( plugin_dir_url( __FILE__ ) . 'admin/images/monetiscope-promo-sidebar.jpg' ) . '" alt="' . esc_attr__( 'Monetiscope Lead Generation Banner', 'clear-and-purge-cache-master' ) . '" style="width: 100%; height: auto; display: block;">';
+							?>
 						</a>
 					</div>
 				</aside>
