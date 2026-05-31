@@ -1,13 +1,13 @@
 === Clear and Purge Cache ===
 Contributors: monetiscope
-Tags: cache, clear cache, optimize, image optimization, speed, database cleanup, minify, performance
+Tags: cache, clear cache, speed, database cleanup, minify
 Requires at least: 5.0
 Tested up to: 7.0
 Stable tag: 1.0.0
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
-Professional-grade WordPress caching, file minification, and database maintenance engine built to scale site speeds. Unlocks premium features entirely for free.
+Professional caching, minification, and database optimization engine to scale site speeds. Unlocks premium performance features for free.
 
 == Description ==
 Developed by Monetiscope, Clear and Purge Cache is an all-in-one optimization suite engineered to instantly lower page load times, lower database overhead, and clean up asset arrays. 

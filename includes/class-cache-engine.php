@@ -20,6 +20,20 @@ class CPC_Cache_Engine {
 	const OPTION_KEY = 'clear_and_purge_cache_settings';
 
 	/**
+	 * Helper function to retrieve the initialized WordPress Filesystem API.
+	 *
+	 * @return object
+	 */
+	private function get_filesystem() {
+		global $wp_filesystem;
+		if ( empty( $wp_filesystem ) ) {
+			require_once ABSPATH . 'wp-admin/includes/file.php';
+			WP_Filesystem();
+		}
+		return $wp_filesystem;
+	}
+
+	/**
 	 * Default settings array.
 	 */
 	public static function get_default_settings() {
@@ -117,7 +131,8 @@ class CPC_Cache_Engine {
 			return;
 		}
 
-		if ( $_SERVER['REQUEST_METHOD'] !== 'GET' ) {
+		$request_method = isset( $_SERVER['REQUEST_METHOD'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REQUEST_METHOD'] ) ) : '';
+		if ( $request_method !== 'GET' ) {
 			return;
 		}
 
@@ -129,7 +144,7 @@ class CPC_Cache_Engine {
 		}
 
 		// Check exclusion pages
-		$current_uri = $_SERVER['REQUEST_URI'];
+		$current_uri   = isset( $_SERVER['REQUEST_URI'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) ) : '';
 		$exclude_lines = array_filter( array_map( 'trim', explode( "\n", $settings['exclude_pages'] ) ) );
 		foreach ( $exclude_lines as $pattern ) {
 			$regex = str_replace( '\*', '.*', preg_quote( $pattern, '/' ) );
@@ -152,8 +167,8 @@ class CPC_Cache_Engine {
 		}
 
 		// Check exclusion User-Agents
-		if ( isset( $_SERVER['HTTP_USER_AGENT'] ) ) {
-			$ua = $_SERVER['HTTP_USER_AGENT'];
+		$ua = isset( $_SERVER['HTTP_USER_AGENT'] ) ? sanitize_text_field( wp_unslash( $_SERVER['HTTP_USER_AGENT'] ) ) : '';
+		if ( ! empty( $ua ) ) {
 			$exclude_uas = array_filter( array_map( 'trim', explode( "\n", $settings['exclude_user_agents'] ) ) );
 			foreach ( $exclude_uas as $ua_pattern ) {
 				if ( stripos( $ua, $ua_pattern ) !== false ) {
@@ -191,9 +206,10 @@ class CPC_Cache_Engine {
 			$html = preg_replace( '/<img([^>]+)src=/i', '<img$1loading="lazy" src=', $html );
 		}
 
-		// Cache storage directory
-		$cache_dir = WP_CONTENT_DIR . '/cache/clear-and-purge-cache';
-		if ( ! file_exists( $cache_dir ) ) {
+		// Cache storage directory using WP_Filesystem
+		$fs = $this->get_filesystem();
+		$cache_dir = WP_CONTENT_DIR . '/cache/clear-and-purge-cache-master';
+		if ( ! $fs->exists( $cache_dir ) ) {
 			wp_mkdir_p( $cache_dir );
 		}
 
@@ -207,14 +223,16 @@ class CPC_Cache_Engine {
 		}
 
 		// Save the static html file
-		$hash = md5( $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'] );
-		$cache_file = $cache_dir . '/' . $prefix . $hash . '.html';
+		$http_host   = isset( $_SERVER['HTTP_HOST'] ) ? sanitize_text_field( wp_unslash( $_SERVER['HTTP_HOST'] ) ) : '';
+		$request_uri = isset( $_SERVER['REQUEST_URI'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) ) : '';
+		$hash        = md5( $http_host . $request_uri );
+		$cache_file  = $cache_dir . '/' . $prefix . $hash . '.html';
 
-		// Append debug footer
-		$timestamp = date( 'Y-m-d H:i:s' );
+		// Append debug footer using standard gmdate
+		$timestamp = gmdate( 'Y-m-d H:i:s' );
 		$html_with_comment = $html . "\n<!-- Cached by Clear and Purge Cache on " . $timestamp . " (" . ( $is_mobile ? 'Mobile' : 'Desktop' ) . ") -->";
 
-		@file_put_contents( $cache_file, $html_with_comment );
+		$fs->put_contents( $cache_file, $html_with_comment );
 
 		return $html;
 	}
@@ -283,9 +301,10 @@ class CPC_Cache_Engine {
 		$url = get_permalink( $post_id );
 		if ( $url ) {
 			$hash = md5( wp_parse_url( $url, PHP_URL_HOST ) . wp_parse_url( $url, PHP_URL_PATH ) );
-			$cache_dir = WP_CONTENT_DIR . '/cache/clear-and-purge-cache';
-			@unlink( $cache_dir . '/desktop-' . $hash . '.html' );
-			@unlink( $cache_dir . '/mobile-' . $hash . '.html' );
+			$cache_dir = WP_CONTENT_DIR . '/cache/clear-and-purge-cache-master';
+			$fs = $this->get_filesystem();
+			$fs->delete( $cache_dir . '/desktop-' . $hash . '.html' );
+			$fs->delete( $cache_dir . '/mobile-' . $hash . '.html' );
 
 			// Trigger Varnish purge if enabled
 			$settings = self::get_settings();
@@ -315,13 +334,15 @@ class CPC_Cache_Engine {
 	 * Handle Gzip/Browser Caching htaccess configuration.
 	 */
 	public function handle_htaccess_rules( $old_value, $new_value ) {
+		$server_software = isset( $_SERVER['SERVER_SOFTWARE'] ) ? sanitize_text_field( wp_unslash( $_SERVER['SERVER_SOFTWARE'] ) ) : '';
 		// Make sure it is apache environment
-		if ( strpos( $_SERVER['SERVER_SOFTWARE'], 'Apache' ) === false && strpos( $_SERVER['SERVER_SOFTWARE'], 'LiteSpeed' ) === false ) {
+		if ( strpos( $server_software, 'Apache' ) === false && strpos( $server_software, 'LiteSpeed' ) === false ) {
 			return;
 		}
 
 		$htaccess_file = ABSPATH . '.htaccess';
-		if ( ! is_writable( $htaccess_file ) ) {
+		$fs = $this->get_filesystem();
+		if ( ! $fs->exists( $htaccess_file ) || ! $fs->is_writable( $htaccess_file ) ) {
 			return;
 		}
 
@@ -348,7 +369,7 @@ class CPC_Cache_Engine {
 			$rules .= "</IfModule>\n";
 		}
 
-		$content = file_get_contents( $htaccess_file );
+		$content = $fs->get_contents( $htaccess_file );
 
 		// Strip existing Clear and Purge Cache blocks
 		$content = preg_replace( '/# BEGIN ClearAndPurgeCache.*# END ClearAndPurgeCache/s', '', $content );
@@ -358,7 +379,7 @@ class CPC_Cache_Engine {
 			$content = trim( $content ) . "\n\n" . $block;
 		}
 
-		@file_put_contents( $htaccess_file, $content );
+		$fs->put_contents( $htaccess_file, $content );
 	}
 
 	/**
@@ -368,7 +389,7 @@ class CPC_Cache_Engine {
 		check_ajax_referer( 'cpc_admin_nonce', 'nonce' );
 
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_send_json_error( array( 'message' => esc_html__( 'Unauthorized permissions.', 'clear-and-purge-cache' ) ), 403 );
+			wp_send_json_error( array( 'message' => esc_html__( 'Unauthorized permissions.', 'clear-and-purge-cache-master' ) ), 403 );
 		}
 
 		$settings = self::get_settings();
@@ -392,19 +413,20 @@ class CPC_Cache_Engine {
 
 		update_option( self::OPTION_KEY, $settings );
 
-		wp_send_json_success( array( 'message' => esc_html__( 'Settings saved successfully!', 'clear-and-purge-cache' ) ) );
+		wp_send_json_success( array( 'message' => esc_html__( 'Settings saved successfully!', 'clear-and-purge-cache-master' ) ) );
 	}
 
 	/**
-	 * Clean page cache helper.
+	 * Clean page cache helper using WP_Filesystem.
 	 */
 	private function purge_all_files() {
-		$cache_dir = WP_CONTENT_DIR . '/cache/clear-and-purge-cache';
-		if ( file_exists( $cache_dir ) ) {
+		$cache_dir = WP_CONTENT_DIR . '/cache/clear-and-purge-cache-master';
+		$fs = $this->get_filesystem();
+		if ( $fs->exists( $cache_dir ) ) {
 			$files = glob( $cache_dir . '/*.html' );
 			if ( is_array( $files ) ) {
 				foreach ( $files as $file ) {
-					@unlink( $file );
+					$fs->delete( $file );
 				}
 			}
 		}
@@ -417,7 +439,7 @@ class CPC_Cache_Engine {
 		check_ajax_referer( 'cpc_admin_nonce', 'nonce' );
 
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_send_json_error( array( 'message' => esc_html__( 'Unauthorized.', 'clear-and-purge-cache' ) ), 403 );
+			wp_send_json_error( array( 'message' => esc_html__( 'Unauthorized.', 'clear-and-purge-cache-master' ) ), 403 );
 		}
 
 		$this->purge_all_files();
@@ -428,7 +450,7 @@ class CPC_Cache_Engine {
 			$this->purge_varnish_url( home_url( '/' ) );
 		}
 
-		wp_send_json_success( array( 'message' => esc_html__( 'All static page caches successfully cleared!', 'clear-and-purge-cache' ) ) );
+		wp_send_json_success( array( 'message' => esc_html__( 'All static page caches successfully cleared!', 'clear-and-purge-cache-master' ) ) );
 	}
 
 	/**
@@ -438,11 +460,11 @@ class CPC_Cache_Engine {
 		check_ajax_referer( 'cpc_admin_nonce', 'nonce' );
 
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_send_json_error( array( 'message' => esc_html__( 'Unauthorized.', 'clear-and-purge-cache' ) ), 403 );
+			wp_send_json_error( array( 'message' => esc_html__( 'Unauthorized.', 'clear-and-purge-cache-master' ) ), 403 );
 		}
 
-		$post_id = isset( $_POST['post_id'] ) ? absint( $_POST['post_id'] ) : 0;
-		$custom_url = isset( $_POST['url'] ) ? esc_url_raw( $_POST['url'] ) : '';
+		$post_id    = isset( $_POST['post_id'] ) ? absint( $_POST['post_id'] ) : 0;
+		$custom_url = isset( $_POST['url'] ) ? esc_url_raw( wp_unslash( $_POST['url'] ) ) : '';
 
 		$url = '';
 		if ( $post_id ) {
@@ -452,17 +474,21 @@ class CPC_Cache_Engine {
 		}
 
 		if ( empty( $url ) ) {
-			wp_send_json_error( array( 'message' => esc_html__( 'Could not determine post URL.', 'clear-and-purge-cache' ) ) );
+			wp_send_json_error( array( 'message' => esc_html__( 'Could not determine post URL.', 'clear-and-purge-cache-master' ) ) );
 		}
 
 		$parsed = wp_parse_url( $url );
-		$path = isset( $parsed['path'] ) ? $parsed['path'] : '/';
-		$host = isset( $parsed['host'] ) ? $parsed['host'] : $_SERVER['HTTP_HOST'];
+		$path   = isset( $parsed['path'] ) ? $parsed['path'] : '/';
+		$host   = isset( $_SERVER['HTTP_HOST'] ) ? sanitize_text_field( wp_unslash( $_SERVER['HTTP_HOST'] ) ) : '';
+		if ( isset( $parsed['host'] ) ) {
+			$host = $parsed['host'];
+		}
 		$hash = md5( $host . $path );
 
-		$cache_dir = WP_CONTENT_DIR . '/cache/clear-and-purge-cache';
-		$desktop_cleared = @unlink( $cache_dir . '/desktop-' . $hash . '.html' );
-		$mobile_cleared = @unlink( $cache_dir . '/mobile-' . $hash . '.html' );
+		$cache_dir = WP_CONTENT_DIR . '/cache/clear-and-purge-cache-master';
+		$fs = $this->get_filesystem();
+		$fs->delete( $cache_dir . '/desktop-' . $hash . '.html' );
+		$fs->delete( $cache_dir . '/mobile-' . $hash . '.html' );
 
 		// Varnish proxy support
 		$settings = self::get_settings();
@@ -471,7 +497,7 @@ class CPC_Cache_Engine {
 		}
 
 		wp_send_json_success( array(
-			'message' => esc_html__( 'Current page cache successfully purged!', 'clear-and-purge-cache' )
+			'message' => esc_html__( 'Current page cache successfully purged!', 'clear-and-purge-cache-master' )
 		) );
 	}
 
@@ -482,24 +508,25 @@ class CPC_Cache_Engine {
 		check_ajax_referer( 'cpc_admin_nonce', 'nonce' );
 
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_send_json_error( array( 'message' => esc_html__( 'Unauthorized.', 'clear-and-purge-cache' ) ), 403 );
+			wp_send_json_error( array( 'message' => esc_html__( 'Unauthorized.', 'clear-and-purge-cache-master' ) ), 403 );
 		}
 
 		// Purge page caches and minified css/js directories
 		$this->purge_all_files();
 
-		$minified_dir = WP_CONTENT_DIR . '/cache/clear-and-purge-cache/min';
-		if ( file_exists( $minified_dir ) ) {
+		$minified_dir = WP_CONTENT_DIR . '/cache/clear-and-purge-cache-master/min';
+		$fs = $this->get_filesystem();
+		if ( $fs->exists( $minified_dir ) ) {
 			$files = array_merge( glob( $minified_dir . '/*.css' ), glob( $minified_dir . '/*.js' ) );
 			if ( is_array( $files ) ) {
 				foreach ( $files as $file ) {
-					@unlink( $file );
+					$fs->delete( $file );
 				}
 			}
 		}
 
 		wp_send_json_success( array(
-			'message' => esc_html__( 'Static page cache and compiled CSS/JS asset folders successfully purged!', 'clear-and-purge-cache' )
+			'message' => esc_html__( 'Static page cache and compiled CSS/JS asset folders successfully purged!', 'clear-and-purge-cache-master' )
 		) );
 	}
 
@@ -510,7 +537,7 @@ class CPC_Cache_Engine {
 		check_ajax_referer( 'cpc_admin_nonce', 'nonce' );
 
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_send_json_error( array( 'message' => esc_html__( 'Unauthorized.', 'clear-and-purge-cache' ) ), 403 );
+			wp_send_json_error( array( 'message' => esc_html__( 'Unauthorized.', 'clear-and-purge-cache-master' ) ), 403 );
 		}
 
 		global $wpdb;
@@ -572,8 +599,13 @@ class CPC_Cache_Engine {
 			$stats['orphaned_termmeta'] = $orph_tm !== false ? $orph_tm : 0;
 		}
 
-		// 8. Expired Transients
-		$transients = $wpdb->get_results( "SELECT option_name FROM $wpdb->options WHERE option_name LIKE '_transient_timeout_%' AND option_value < " . time() );
+		// 8. Expired Transients (Using $wpdb->prepare for secure database execution)
+		$trans_query = $wpdb->prepare(
+			"SELECT option_name FROM $wpdb->options WHERE option_name LIKE %s AND option_value < %d",
+			'_transient_timeout_%',
+			time()
+		);
+		$transients = $wpdb->get_results( $trans_query );
 		$stats['transient_options'] = count( $transients );
 		foreach ( $transients as $t ) {
 			$trans_key = str_replace( '_transient_timeout_', '', $t->option_name );
@@ -587,7 +619,7 @@ class CPC_Cache_Engine {
 		}
 
 		wp_send_json_success( array(
-			'message' => esc_html__( 'Database optimized successfully!', 'clear-and-purge-cache' ),
+			'message' => esc_html__( 'Database optimized successfully!', 'clear-and-purge-cache-master' ),
 			'stats'   => $stats,
 		) );
 	}
@@ -599,7 +631,7 @@ class CPC_Cache_Engine {
 		check_ajax_referer( 'cpc_admin_nonce', 'nonce' );
 
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_send_json_error( array( 'message' => esc_html__( 'Unauthorized.', 'clear-and-purge-cache' ) ), 403 );
+			wp_send_json_error( array( 'message' => esc_html__( 'Unauthorized.', 'clear-and-purge-cache-master' ) ), 403 );
 		}
 
 		// Real non-destructive compression simulation loops
@@ -613,7 +645,7 @@ class CPC_Cache_Engine {
 		update_option( self::OPTION_KEY, $settings );
 
 		wp_send_json_success( array(
-			'message'   => esc_html__( 'Non-destructive image compression loop completed successfully!', 'clear-and-purge-cache' ),
+			'message'   => esc_html__( 'Non-destructive image compression loop completed successfully!', 'clear-and-purge-cache-master' ),
 			'succeed'   => 100,
 			'pending'   => 0,
 			'errors'    => 0,
