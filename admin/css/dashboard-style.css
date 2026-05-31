@@ -599,7 +599,7 @@ input:checked + .cpc-slider:before {
 
 .cpc-promo-card {
 	padding: 0 !important;
-	overflow: hidden;
+	overflow: visible !important;
 	position: relative;
 	border: 2px solid #4f258c;
 }
@@ -614,6 +614,7 @@ input:checked + .cpc-slider:before {
 	width: 100%;
 	height: auto;
 	display: block;
+	border-radius: 8px;
 	transition: transform 0.3s ease;
 }
 

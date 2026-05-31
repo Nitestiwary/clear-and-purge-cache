@@ -783,14 +783,6 @@ class Clear_And_Purge_Cache {
 
 				<!-- Right Column: Responsive Promotional Sidebar (Part 3) -->
 				<aside class="cpc-sidebar-column">
-					<!-- Lead Generation Banner Integration -->
-					<div class="cpc-sidebar-card cpc-promo-card">
-						<a href="https://monetiscope.com/contact" target="_blank" rel="noopener noreferrer" class="cpc-promo-link">
-							<img src="<?php echo esc_url( plugin_dir_url( __FILE__ ) . 'admin/images/monetiscope-promo-sidebar.jpg' ); ?>" alt="Monetiscope Lead Generation Banner" class="cpc-promo-banner-img">
-						</a>
-						<div class="cpc-promo-badge"><?php esc_html_e( 'Premium Ad Partner', 'clear-and-purge-cache' ); ?></div>
-					</div>
-
 					<!-- Social Follow Section -->
 					<div class="cpc-sidebar-card cpc-social-card">
 						<h3><?php esc_html_e( 'Connect with Us', 'clear-and-purge-cache' ); ?></h3>
@@ -802,6 +794,14 @@ class Clear_And_Purge_Cache {
 							</svg>
 							<span><?php esc_html_e( 'Follow Monetiscope', 'clear-and-purge-cache' ); ?></span>
 						</a>
+					</div>
+
+					<!-- Lead Generation Banner Integration -->
+					<div class="cpc-sidebar-card cpc-promo-card">
+						<a href="https://monetiscope.com/contact" target="_blank" rel="noopener noreferrer" class="cpc-promo-link">
+							<img src="<?php echo esc_url( plugin_dir_url( __FILE__ ) . 'admin/images/monetiscope-promo-sidebar.jpg' ); ?>" alt="Monetiscope Lead Generation Banner" class="cpc-promo-banner-img">
+						</a>
+						<div class="cpc-promo-badge"><?php esc_html_e( 'Premium Ad Partner', 'clear-and-purge-cache' ); ?></div>
 					</div>
 				</aside>
 			</div>
