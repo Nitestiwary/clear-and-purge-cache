@@ -613,8 +613,6 @@ input:checked + .cpc-slider:before {
 .cpc-promo-banner-img {
 	width: 100%;
 	height: auto;
-	max-height: 400px;
-	object-fit: cover;
 	display: block;
 	transition: transform 0.3s ease;
 }

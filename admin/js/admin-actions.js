@@ -87,6 +87,7 @@ function CPC_Trigger_Clear_Page(postId) {
 	$.post(cpc_vars.ajax_url, {
 		action: 'cpc_clear_page_cache',
 		post_id: postId,
+		url: postId ? '' : window.location.href,
 		nonce: cpc_vars.nonce
 	}, function(res) {
 		if (res.success) {

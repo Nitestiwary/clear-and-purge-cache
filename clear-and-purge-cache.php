@@ -52,9 +52,8 @@ class Clear_And_Purge_Cache {
 		$this->engine = new CPC_Cache_Engine();
 		$this->engine->init();
 
-		// Enqueue scripts and styles in Admin Dashboard
+		// Enqueue scripts and styles globally for admins to support Admin Bar actions
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_admin_assets' ) );
-		// Enqueue scripts for Admin Bar actions on the Front-end
 		add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_frontend_assets' ) );
 
 		// Register settings page in sidebar menu
@@ -108,17 +107,21 @@ class Clear_And_Purge_Cache {
 	 * Enqueue admin stylesheet and scripts.
 	 */
 	public function enqueue_admin_assets( $hook ) {
-		if ( 'settings_page_clear-and-purge-cache' !== $hook ) {
+		if ( ! current_user_can( 'manage_options' ) ) {
 			return;
 		}
 
-		wp_enqueue_style(
-			'cpc-dashboard-style',
-			plugin_dir_url( __FILE__ ) . 'admin/css/dashboard-style.css',
-			array(),
-			'1.0.0'
-		);
+		// Only enqueue full dashboard stylesheet on our settings screen
+		if ( 'toplevel_page_clear-and-purge-cache' === $hook ) {
+			wp_enqueue_style(
+				'cpc-dashboard-style',
+				plugin_dir_url( __FILE__ ) . 'admin/css/dashboard-style.css',
+				array(),
+				'1.0.0'
+			);
+		}
 
+		// Enqueue the admin actions JS on ALL admin screens so that the top Admin Bar actions work everywhere
 		wp_enqueue_script(
 			'cpc-admin-actions',
 			plugin_dir_url( __FILE__ ) . 'admin/js/admin-actions.js',
@@ -165,14 +168,17 @@ class Clear_And_Purge_Cache {
 	 * Register the administrative configuration page.
 	 */
 	public function register_settings_page() {
-		add_options_page(
+		add_menu_page(
 			esc_html__( 'Clear and Purge Cache', 'clear-and-purge-cache' ),
 			esc_html__( 'Clear Cache', 'clear-and-purge-cache' ),
 			'manage_options',
 			'clear-and-purge-cache',
-			array( $this, 'render_admin_dashboard' )
+			array( $this, 'render_admin_dashboard' ),
+			'dashicons-performance',
+			80
 		);
 	}
+
 
 	/**
 	 * Hook into standard admin bar menu.
@@ -182,11 +188,11 @@ class Clear_And_Purge_Cache {
 			return;
 		}
 
-		// Top level node
+		// Top level node - Link to our new top-level admin menu
 		$wp_admin_bar->add_node( array(
 			'id'    => 'cpc-admin-bar-menu',
 			'title' => '<span class="ab-icon dashicons dashicons-performanceCPC" style="margin-top:2px;"></span>' . esc_html__( 'Purge Cache', 'clear-and-purge-cache' ),
-			'href'  => admin_url( 'options-general.php?page=clear-and-purge-cache' ),
+			'href'  => admin_url( 'admin.php?page=clear-and-purge-cache' ),
 			'meta'  => array( 'class' => 'cpc-admin-bar-menu-root' )
 		) );
 
@@ -213,18 +219,16 @@ class Clear_And_Purge_Cache {
 			'meta'   => array( 'onclick' => 'CPC_Trigger_Clear_All(); return false;' )
 		) );
 
-		// Dropdown node 2: Clear cache of current page (Visible strictly on front-end)
-		if ( ! is_admin() && is_singular() ) {
-			$post = get_post();
-			if ( $post ) {
-				$wp_admin_bar->add_node( array(
-					'parent' => 'cpc-admin-bar-menu',
-					'id'     => 'cpc-clear-page-node',
-					'title'  => esc_html__( 'Clear cache of this page', 'clear-and-purge-cache' ),
-					'href'   => '#',
-					'meta'   => array( 'onclick' => 'CPC_Trigger_Clear_Page(' . $post->ID . '); return false;' )
-				) );
-			}
+		// Dropdown node 2: Clear cache of current page (Visible on ALL front-end pages)
+		if ( ! is_admin() ) {
+			$post_id = is_singular() ? get_the_ID() : 0;
+			$wp_admin_bar->add_node( array(
+				'parent' => 'cpc-admin-bar-menu',
+				'id'     => 'cpc-clear-page-node',
+				'title'  => esc_html__( 'Clear cache of this page', 'clear-and-purge-cache' ),
+				'href'   => '#',
+				'meta'   => array( 'onclick' => 'CPC_Trigger_Clear_Page(' . $post_id . '); return false;' )
+			) );
 		}
 
 		// Dropdown node 3: Clear cache and Minified css/js
