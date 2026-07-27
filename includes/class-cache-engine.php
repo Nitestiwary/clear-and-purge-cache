@@ -261,6 +261,7 @@ class CPC_Cache_Engine {
 
 	public function disable_emojis_dns_prefetch( $urls, $relation_type ) {
 		if ( 'dns-prefetch' === $relation_type ) {
+			// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
 			$emoji_svg_url = apply_filters( 'emoji_svg_url', 'https://s.w.org/images/core/emoji/' );
 			foreach ( $urls as $key => $url ) {
 				if ( strpos( $url, $emoji_svg_url ) !== false ) {
